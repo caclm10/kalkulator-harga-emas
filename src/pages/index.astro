@@ -1,0 +1,122 @@
+---
+import { cheerio } from "../lib/scrapper";
+
+const response = await fetch("https://api.treasury.id/page/about");
+const html = await response.text();
+
+const $ = cheerio.load(html);
+
+const buyingRateText = $("#buyingrate").text().trim();
+const sellingRateText = $("#sellingrate").text().trim();
+---
+
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width" />
+        <meta name="generator" content={Astro.generator} />
+        <title>Kalkulator Harga Emas</title>
+        <meta
+            name="description"
+            content="Kalkulator harga emas online yang membantu Anda menghitung biaya emas yang Anda beli atau jual berdasarkan harga emas hari ini."
+        />
+    </head>
+
+    <body class="bg-gray-100 min-h-screen flex items-center justify-center">
+        <div class="bg-white p-8 rounded-lg shadow-md w-96">
+            <h1 class="text-2xl font-bold mb-6 text-center text-yellow-600">
+                Kalkulator Harga Emas (IDR)
+            </h1>
+            <div id="currentPrices" class="mb-6 p-4 bg-yellow-50 rounded-md">
+                <h2 class="text-lg font-semibold mb-2">Harga Emas Hari Ini</h2>
+                <p>
+                    Beli: <span
+                        id="currentBuyPrice"
+                        class="font-bold text-green-600">{buyingRateText}</span
+                    >
+                </p>
+                <p>
+                    Jual: <span
+                        id="currentSellPrice"
+                        class="font-bold text-red-600">{sellingRateText}</span
+                    >
+                </p>
+                <p class="text-xs text-gray-500 mt-2">
+                    Last updated: <span id="lastUpdated"></span>
+                </p>
+            </div>
+            <div class="space-y-4">
+                <form id="calculatorForm" class="space-y-4">
+                    <div>
+                        <label
+                            for="weight"
+                            class="block text-sm font-medium text-gray-700"
+                            >Berat Emas (gram)</label
+                        >
+                        <input
+                            type="number"
+                            step=".01"
+                            id="weight"
+                            name="weight"
+                            class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-yellow-500 focus:border-yellow-500"
+                            placeholder="Masukkan berat dalam gram"
+                        />
+                    </div>
+                    <button
+                        type="submit"
+                        class="w-full bg-yellow-500 text-white py-2 px-4 rounded-md hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-opacity-50"
+                        >Hitung</button
+                    >
+                </form>
+
+                <div class="mt-4">
+                    <p class="text-lg font-semibold">
+                        Total Harga Beli: <span
+                            id="totalBuyPrice"
+                            class="text-green-600"></span>
+                    </p>
+                    <p class="text-lg font-semibold">
+                        Total Harga Jual: <span
+                            id="totalSellPrice"
+                            class="text-red-600"></span>
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            import { calculatePrice, formatIDR, getValue } from "../lib/price";
+
+            const currentBuyPriceEl =
+                document.getElementById("currentBuyPrice")!;
+            const currentSellPriceEl =
+                document.getElementById("currentSellPrice")!;
+            const totalBuyPriceEl = document.getElementById("totalBuyPrice")!;
+            const totalSellPriceEl = document.getElementById("totalSellPrice")!;
+
+            const calculatorForm = document.forms.namedItem("calculatorForm")!;
+            const weightInputEl = calculatorForm.elements.namedItem(
+                "weight"
+            ) as HTMLInputElement;
+
+            const buyPrice = getValue(currentBuyPriceEl.textContent!);
+            const sellPrice = getValue(currentSellPriceEl.textContent!);
+
+            calculatorForm.addEventListener("submit", (event) => {
+                event.preventDefault();
+
+                if (!weightInputEl.value) return;
+
+                const { totalBuyPrice, totalSellPrice } = calculatePrice(
+                    weightInputEl.value,
+                    buyPrice,
+                    sellPrice
+                );
+
+                totalBuyPriceEl.textContent = `${formatIDR(totalBuyPrice)} /gram`;
+
+                totalSellPriceEl.textContent = `${formatIDR(totalSellPrice)} /gram`;
+            });
+        </script>
+    </body>
+</html>
